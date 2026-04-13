@@ -4,6 +4,19 @@ const fetch = require('node-fetch');
 const app = express();
 app.use(express.json());
 
+// 🔥 CORS FIX
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*'); // eller brug din domain
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
 // Test route (valgfri men god til at tjekke)
 app.get('/', (req, res) => {
   res.send('Astra API kører');

@@ -48,7 +48,7 @@ app.post('/apply', async (req, res) => {
 
     console.log('Sender payload til bot:', upstreamPayload);
 
-    const upstreamResponse = await fetch('https://85.215.229.230:8080/api/apply', {
+    const upstreamResponse = await fetch('https://api.astra-smp.com/api/apply', {
       method: 'POST',
       agent: insecureHttpsAgent,
       headers: {

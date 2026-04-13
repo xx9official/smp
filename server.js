@@ -5,6 +5,7 @@ const https = require('https');
 const app = express();
 app.use(express.json());
 
+// CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://astra-smp.com');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
@@ -17,10 +18,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Test route
 app.get('/', (req, res) => {
   res.json({ ok: true, message: 'Astra API kører' });
 });
 
+// Tillad HTTPS mod IP/self-signed hvis din bot-host kræver det
 const insecureHttpsAgent = new https.Agent({
   rejectUnauthorized: false
 });
@@ -67,6 +70,7 @@ app.post('/apply', async (req, res) => {
     }
 
     return res.status(upstreamResponse.status).json(parsed);
+
   } catch (err) {
     console.error('Render apply fejl:', err);
     return res.status(500).json({

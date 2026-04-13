@@ -28,7 +28,7 @@ app.post('/apply', async (req, res) => {
       '\n\n🎥 Creator: ' +
       (data.creator_interest || 'Ikke angivet');
 
-    const upstreamResponse = await fetch('http://85.215.229.230:8080/api/apply', {
+    const upstreamResponse = await fetch('https://85.215.229.230:8080/api/apply', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

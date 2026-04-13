@@ -4,60 +4,64 @@ const fetch = require('node-fetch');
 const app = express();
 app.use(express.json());
 
-// 🔥 CORS FIX
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*'); // eller brug din domain
+  res.setHeader('Access-Control-Allow-Origin', 'https://astra-smp.com');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
 
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+    return res.sendStatus(204);
   }
 
   next();
 });
 
-// Test route (valgfri men god til at tjekke)
 app.get('/', (req, res) => {
-  res.send('Astra API kører');
+  res.json({ ok: true, message: 'Astra API kører' });
 });
 
 app.post('/apply', async (req, res) => {
   try {
-    const data = req.body;
+    const data = req.body || {};
 
-    // Saml creator + extra
-    const extra = (data.extra || "") +
-      "\n\n🎥 Creator: " +
-      (data.creator_interest || "Ikke angivet");
+    const extra = (data.extra || '') +
+      '\n\n🎥 Creator: ' +
+      (data.creator_interest || 'Ikke angivet');
 
-    const response = await fetch('http://85.215.229.230:8080/api/apply', {
+    const upstreamResponse = await fetch('http://85.215.229.230:8080/api/apply', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({
-        minecraft_username: data.minecraft_username,
-        discord_user_id: data.discord_user_id,
-        age: data.age,
-        playstyle: data.playstyle,
-        why_join: data.why_join,
-        experience: data.experience,
-        extra: extra
+        minecraft_username: data.minecraft_username || '',
+        discord_user_id: data.discord_user_id || '',
+        age: data.age || '',
+        playstyle: data.playstyle || '',
+        why_join: data.why_join || '',
+        experience: data.experience || '',
+        extra: extra || ''
       })
     });
 
-    const text = await response.text();
+    const raw = await upstreamResponse.text();
 
-    res.status(response.status).send(text);
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = { error: raw || 'Bot API svarede ikke med JSON.' };
+    }
 
+    return res.status(upstreamResponse.status).json(parsed);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Kunne ikke sende ansøgning" });
+    console.error('Render apply fejl:', err);
+    return res.status(500).json({ error: 'Kunne ikke sende ansøgning.' });
   }
 });
 
-// Render kræver PORT env
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-  console.log("Server kører på port", PORT);
+  console.log(`Server kører på port ${PORT}`);
 });

@@ -5,7 +5,6 @@ const https = require('https');
 const app = express();
 app.use(express.json());
 
-// CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://astra-smp.com');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
@@ -18,12 +17,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// Test route
 app.get('/', (req, res) => {
   res.json({ ok: true, message: 'Astra API kører' });
 });
 
-// Tillad HTTPS mod IP/self-signed hvis din bot-host kræver det
 const insecureHttpsAgent = new https.Agent({
   rejectUnauthorized: false
 });
@@ -46,9 +43,9 @@ app.post('/apply', async (req, res) => {
       extra: extra || ''
     };
 
-    console.log('Sender payload til bot:', upstreamPayload);
+    console.log('Sender payload til bot:', JSON.stringify(upstreamPayload));
 
-    const upstreamResponse = await fetch('https://api.astra-smp.com/api/apply', {
+    const upstreamResponse = await fetch('https://85.215.229.230:8080/api/apply', {
       method: 'POST',
       agent: insecureHttpsAgent,
       headers: {
@@ -70,12 +67,13 @@ app.post('/apply', async (req, res) => {
     }
 
     return res.status(upstreamResponse.status).json(parsed);
-
   } catch (err) {
-    console.error('Render apply fejl:', err);
+    console.error('Render apply fejl stack:', err && err.stack ? err.stack : err);
+    console.error('Render apply fejl message:', err && err.message ? err.message : String(err));
+
     return res.status(500).json({
       error: 'Render kunne ikke sende til bot API.',
-      details: err.message || String(err)
+      details: err && err.message ? err.message : String(err)
     });
   }
 });

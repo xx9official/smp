@@ -1,84 +1,63 @@
 const express = require('express');
 const fetch = require('node-fetch');
-const https = require('https');
 
 const app = express();
 app.use(express.json());
 
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+const CHANNEL_ID = process.env.APPLICATION_CHANNEL_ID;
+
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://astra-smp.com');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
-});
-
-app.get('/', (req, res) => {
-  res.json({ ok: true, message: 'Astra API kører' });
-});
-
-const insecureHttpsAgent = new https.Agent({
-  rejectUnauthorized: false
 });
 
 app.post('/apply', async (req, res) => {
   try {
-    const data = req.body || {};
+    const data = req.body;
 
-    const extra = (data.extra || '') +
-      '\n\n🎥 Creator: ' +
-      (data.creator_interest || 'Ikke angivet');
-
-    const upstreamPayload = {
-      minecraft_username: data.minecraft_username || '',
-      discord_user_id: data.discord_user_id || '',
-      age: data.age || '',
-      playstyle: data.playstyle || '',
-      why_join: data.why_join || '',
-      experience: data.experience || '',
-      extra: extra || ''
+    const embed = {
+      title: `Ny ansøgning • ${data.minecraft_username}`,
+      color: 0x7AA8FF,
+      fields: [
+        { name: "Minecraft navn", value: data.minecraft_username, inline: true },
+        { name: "Discord ID", value: data.discord_user_id, inline: true },
+        { name: "Alder", value: data.age, inline: true },
+        { name: "Spillestil", value: data.playstyle },
+        { name: "Hvorfor Astra", value: data.why_join },
+        { name: "Erfaring", value: data.experience },
+        { name: "Ekstra", value: data.extra || "Ingen" }
+      ],
+      timestamp: new Date().toISOString()
     };
 
-    console.log('Sender payload til bot:', JSON.stringify(upstreamPayload));
-
-    const upstreamResponse = await fetch('https://85.215.229.230:3001/api/apply', {
+    const response = await fetch(`https://discord.com/api/v10/channels/${CHANNEL_ID}/messages`, {
       method: 'POST',
-      agent: insecureHttpsAgent,
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Authorization': `Bot ${DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(upstreamPayload),
-      timeout: 15000
+      body: JSON.stringify({
+        embeds: [embed]
+      })
     });
 
-    const raw = await upstreamResponse.text();
-    console.log('Svar fra bot:', upstreamResponse.status, raw);
+    const text = await response.text();
 
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      parsed = { error: raw || 'Bot API svarede ikke med JSON.' };
+    if (!response.ok) {
+      return res.status(500).json({ error: text });
     }
 
-    return res.status(upstreamResponse.status).json(parsed);
-  } catch (err) {
-    console.error('Render apply fejl stack:', err && err.stack ? err.stack : err);
-    console.error('Render apply fejl message:', err && err.message ? err.message : String(err));
+    res.json({ ok: true });
 
-    return res.status(500).json({
-      error: 'Render kunne ikke sende til bot API.',
-      details: err && err.message ? err.message : String(err)
-    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Kunne ikke sende ansøgning" });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server kører på port ${PORT}`);
-});
+app.listen(3000, () => console.log("API kører"));

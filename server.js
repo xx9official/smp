@@ -45,7 +45,7 @@ app.post('/apply', async (req, res) => {
 
     console.log('Sender payload til bot:', JSON.stringify(upstreamPayload));
 
-    const upstreamResponse = await fetch('https://85.215.229.230:8080/api/apply', {
+    const upstreamResponse = await fetch('https://85.215.229.230:3001/api/apply', {
       method: 'POST',
       agent: insecureHttpsAgent,
       headers: {

@@ -151,7 +151,13 @@ async def on_ready():
 async def main():
     async with bot:
         await start_web()
+        while True:
+    try:
         await bot.start(DISCORD_TOKEN)
+    except Exception as e:
+        logger.error(f"Bot crashed: {e}")
+        logger.info("Retry om 10 sek...")
+        await asyncio.sleep(10)
 
 
 asyncio.run(main())

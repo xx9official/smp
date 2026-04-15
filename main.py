@@ -24,7 +24,7 @@ STAFF_ROLE_ID = int(os.getenv("STAFF_ROLE_ID", "0"))
 
 WEB_HOST = "0.0.0.0"
 WEB_PORT = int(os.getenv("PORT", "10000"))
-STATE_FILE = "applications_state.json"
+STATE_FILE = os.getenv("STATE_FILE", "applications_state.json")
 PUBLIC_SITE_ORIGIN = os.getenv("PUBLIC_SITE_ORIGIN", "*")
 
 if not DISCORD_TOKEN:
@@ -43,6 +43,7 @@ if missing_ids:
 intents = discord.Intents.default()
 intents.guilds = True
 intents.members = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 
@@ -98,7 +99,7 @@ def cors_headers() -> dict:
     return {
         "Access-Control-Allow-Origin": PUBLIC_SITE_ORIGIN,
         "Access-Control-Allow-Headers": "Content-Type, Accept",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
     }
 
 
@@ -274,6 +275,13 @@ class DecisionView(discord.ui.View):
         await interaction.response.send_message("Ansøgningen er afvist.", ephemeral=True)
 
 
+async def handle_status(request: web.Request) -> web.Response:
+    if request.method == "OPTIONS":
+        return web.Response(status=204, headers=cors_headers())
+
+    return json_response({"online": True})
+
+
 async def handle_apply(request: web.Request) -> web.Response:
     logger.info("Indgående ansøgning fra %s", request.remote)
 
@@ -335,6 +343,8 @@ async def handle_apply(request: web.Request) -> web.Response:
 
 async def start_web_app():
     app = web.Application(client_max_size=1024**2)
+    app.router.add_route("GET", "/api/status", handle_status)
+    app.router.add_route("OPTIONS", "/api/status", handle_status)
     app.router.add_route("POST", "/api/apply", handle_apply)
     app.router.add_route("OPTIONS", "/api/apply", handle_apply)
 
